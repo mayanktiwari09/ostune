@@ -1,0 +1,12 @@
+{
+  "database_type" : "postgres",
+  "database_name" : "tpcc",
+  "username" : "postgres",
+  "password" : "postgres",
+  "oltpbench_home": "/home/azureuser/ostune/client/oltpbench",
+  "oltpbench_config": "/home/azureuser/ostune/client/oltpbench/config/tpcc_config_postgres.xml",
+  "oltpbench_workload": "tpcc",
+  "oltpbench_log" : "/home/azureuser/ostune/client/oltp.log",
+  "save_path": "/home/azureuser/ostune/client/results",
+  "upload_url" : "http://127.0.0.1:8000",
+}

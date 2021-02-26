@@ -5,7 +5,7 @@ import time
 import os.path
 import re
 from multiprocessing import Process
-from fabric.api import (env, local, task, lcd)
+from fabric.api import (env, local, task, lcd, run)
 from fabric.state import output as fabric_output
 
 LOG = logging.getLogger()
@@ -164,48 +164,66 @@ def _ready_to_shut_down_controller():
             'Output into file' in open(CONF['oltpbench_log']).read())
 
 
+def start_recording():
+    cmd = "./run_tuner.sh"
+    with lcd(CONF['ostune_client_home']):
+        local(cmd)
+
+def parse_result():
+    result_str=open(CONF['loop_result']).read()
+    start=result_str.find(" = ")+3
+    end=result_str.find("requests/sec")-1
+    return float(result_str[start:end])
+
+def write_knobs():
+    cmd = "./get_knobs.sh"
+    with lcd(CONF['ostune_client_home']):
+        local(cmd)
+
+def parse_vm_swapiness():
+    result_str=open(CONF['vm_swapiness']).read()
+    start=result_str.find(" = ") + 3
+    end=len(result_str)
+    return int(result_str[start:end])
+
 @task
 def loop():
     max_disk_usage = 80
 
     # free cache
-    free_cache()
-
-    # restart database
-    restart_database()
-
-    # check disk usage
-    if check_disk_usage() > max_disk_usage:
-        LOG.info('Exceeds max disk usage %s, reload database', max_disk_usage)
-        drop_database()
-        create_database()
-        load_oltpbench()
-        LOG.info('Reload database Done !')
+    #free_cache()
 
     # run oltpbench as a background job
-    run_oltpbench_bg()
+    #run_oltpbench_bg()
 
     # run controller from another process
-    p = Process(target=run_controller, args=())
-    while not _ready_to_start_controller():
-        pass
-    p.start()
-    while not _ready_to_shut_down_controller():
-        pass
+    #p = Process(target=run_controller, args=())
+    #while not _ready_to_start_controller():
+    #    pass
+    #p.start()
+    #while not _ready_to_shut_down_controller():
+    #    pass
 
     # stop the experiment
-    stop_controller()
+    #stop_controller()
 
-    p.join()
+    #p.join()
 
     # upload result
-    upload_result()
+    start_recording()
+    throughput=parse_result()
+    LOG.info('Throughput = %.4f',throughput)
+    write_knobs()
+    vm_swapiness=parse_vm_swapiness()
+    LOG.info('vm.swapiness = %s',vm_swapiness)
+    
+    #upload_result()
 
     # get result
-    get_result()
+    #get_result()
 
     # change config
-    change_conf()
+    #change_conf()
 
 
 @task

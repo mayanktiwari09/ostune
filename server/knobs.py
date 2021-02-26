@@ -4,5 +4,5 @@ class Knobs:
 
     def serialize(self):
         return {
-            'vm.Swapiness': self.vmSwapiness
+            'vm.swapiness': self.vmSwapiness
         }

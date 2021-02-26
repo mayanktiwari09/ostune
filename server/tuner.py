@@ -12,9 +12,8 @@ def json_example():
     request_data = request.get_json()
     metricsJson = json.loads(request_data[METRICS])
     knobsJson = json.loads(request_data[KNOBS])
-    knobs = Knobs(vmSwapiness=knobsJson[VM_SWAPINESS])
-    metrics = Metrics(throughput=metricsJson[THROUGHPUT])
-
+    knobs = Knobs(vmSwapiness=str(knobsJson[VM_SWAPINESS]))
+    metrics = Metrics(throughput=str(metricsJson[THROUGHPUT]))
 
     recommendedKnobs = Knobs(vmSwapiness=knobs.vmSwapiness)
     return jsonify(recommendedKnobs.serialize())

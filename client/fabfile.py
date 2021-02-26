@@ -4,6 +4,8 @@ import logging
 import time
 import os.path
 import re
+from knobs import Knobs
+from metrics import Metrics
 from multiprocessing import Process
 from fabric.api import (env, local, task, lcd, run)
 from fabric.state import output as fabric_output
@@ -186,6 +188,9 @@ def parse_vm_swapiness():
     end=len(result_str)
     return int(result_str[start:end])
 
+def post_results(knobs: Knobs, metrics: Metrics):
+    return int(0)
+
 @task
 def loop():
     max_disk_usage = 80
@@ -216,6 +221,11 @@ def loop():
     write_knobs()
     vm_swapiness=parse_vm_swapiness()
     LOG.info('vm.swapiness = %s',vm_swapiness)
+
+    knobs=Knobs(vmSwapiness=vm_swapiness)
+    metrics=Metrics(throughput=throughput)
+    test=post_results(knobs,metrics)
+    LOG.info('test = %s',test)
     
     #upload_result()
 

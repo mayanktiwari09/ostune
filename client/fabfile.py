@@ -4,6 +4,7 @@ import logging
 import time
 import os.path
 import re
+import requests
 from knobs import Knobs
 from metrics import Metrics
 from multiprocessing import Process
@@ -189,6 +190,10 @@ def parse_vm_swapiness():
     return int(result_str[start:end])
 
 def post_results(knobs: Knobs, metrics: Metrics):
+    dictToSend = { 'metrics':json.dumps(metrics.serialize()),'knobs':json.dumps(knobs.serialize())}
+    print(json.loads(json.dumps(dictToSend)))
+    res = requests.post(CONF['tuner_url'], json=json.loads(json.dumps(dictToSend)))
+    print(res.json())
     return int(0)
 
 @task

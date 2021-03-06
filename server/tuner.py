@@ -81,7 +81,7 @@ class Bayesian (threading.Thread):
            time.sleep(SLEEP)
        result = store[tempJson]
        store.pop(tempJson)
-       return result
+       return -1.0 * result
 
 app.run(debug=True, port=8000, host='0.0.0.0')
 

@@ -1,3 +1,4 @@
+import hashlib
 import string
 import threading
 import time
@@ -31,11 +32,19 @@ def get_recommendation():
     knobsJson = json.loads(request_data[KNOBS])
     knobs = Knobs(vmSwapiness=knobsJson[VM_SWAPINESS])
     metrics = Metrics(throughput=metricsJson[THROUGHPUT])
+    temp = {}
+    temp[VM_SWAPINESS] = knobs.vmSwapiness
+    tempJson = json.dumps(temp)
+    store[tempJson] = metrics.throughput
+    firstHash = int(hashlib.sha256(str(tempJson).encode('utf-8')).hexdigest(), 16) % 10 ** 8
+    result = str(list(store.keys())[0])
+    finalHash = int(hashlib.sha256(result.encode('utf-8')).hexdigest(), 16) % 10 ** 8
+    while firstHash == finalHash:
+        time.sleep(SLEEP)
+        result = str(list(store.keys())[0])
+        finalHash = int(hashlib.sha256(result.encode('utf-8')).hexdigest(), 16) % 10 ** 8
 
-    store[knobs.vmSwapiness] = metrics.throughput
-    time.sleep(10)
-
-    return jsonify(store)
+    return jsonify(result)
 
 @app.route('/api/v1/create_tuning_session', methods=['GET'])
 def create_tuning_session():
@@ -44,8 +53,8 @@ def create_tuning_session():
     bayesian.start()
     while len(store) == 0:
         time.sleep(SLEEP)
-
-    return jsonify(store)
+    result = next(iter(store))
+    return jsonify(str(result))
 
 class Bayesian (threading.Thread):
    def __init__(self, sessionId):
@@ -54,21 +63,24 @@ class Bayesian (threading.Thread):
       self.name = sessionId
 
    def run(self):
-      space = hp.uniform('vm_swapiness', 0, 100)
+      space = hp.randint('vm_swapiness', 100)
       best = fmin(
           fn=self.get_metrics,
           space=space,
           algo=tpe.suggest,
-          max_evals=1000
+          max_evals=100
       )
       LOG.info(f'best = {best}')
 
    def get_metrics(self, vm_swapiness):
-       store[vm_swapiness] = 0
-       while store[vm_swapiness] == 0:
+       temp = {}
+       temp[VM_SWAPINESS] = vm_swapiness
+       tempJson = json.dumps(temp)
+       store[tempJson] = 0
+       while store[tempJson] == 0:
            time.sleep(SLEEP)
-       result = store[vm_swapiness]
-       store.pop(vm_swapiness)
+       result = store[tempJson]
+       store.pop(tempJson)
        return result
 
 app.run(debug=True, port=8000, host='0.0.0.0')

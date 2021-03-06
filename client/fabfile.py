@@ -222,11 +222,11 @@ def loop():
 
 @task
 def run_loops(max_iter=100):
+    first_recommendation=get_first_recommendation()
+    LOG.info(f'initial_recommendation = {first_recommendation}')
+    knobs = Knobs(vmSwapiness=json.loads(first_recommendation)["vm.swapiness"])
+    apply_recommendation(knobs)
     for i in range(int(max_iter)):
         LOG.info('The %s-th Loop Starts / Total Loops %s', i + 1, max_iter)
-        first_recommendation=get_first_recommendation()
-        LOG.info(f'initial_recommendation = {first_recommendation}')
-        knobs = Knobs(vmSwapiness=json.loads(first_recommendation)["vm.swapiness"])
-        apply_recommendation(knobs)
         loop()
         LOG.info('The %s-th Loop Ends / Total Loops %s', i + 1, max_iter)

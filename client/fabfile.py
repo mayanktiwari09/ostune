@@ -5,6 +5,7 @@ import time
 import os.path
 import re
 import requests
+import os
 from knobs import Knobs
 from metrics import Metrics
 from multiprocessing import Process
@@ -193,57 +194,39 @@ def post_results(knobs: Knobs, metrics: Metrics):
     dictToSend = { 'metrics':json.dumps(metrics.serialize()),'knobs':json.dumps(knobs.serialize())}
     print(json.loads(json.dumps(dictToSend)))
     res = requests.post(CONF['tuner_url'], json=json.loads(json.dumps(dictToSend)))
-    print(res.json())
-    return int(0)
+    return res.json()
+
+def get_first_recommendation():
+    res = requests.get(CONF['tuner_create'])
+    return res.json()
+
+def apply_recommendation(knobs: Knobs):
+    cmd = f'sudo sysctl -w vm.swappiness={knobs.vmSwapiness}'
+    os.system(cmd)
+    return 0
 
 @task
 def loop():
     max_disk_usage = 80
 
-    # free cache
-    #free_cache()
-
-    # run oltpbench as a background job
-    #run_oltpbench_bg()
-
-    # run controller from another process
-    #p = Process(target=run_controller, args=())
-    #while not _ready_to_start_controller():
-    #    pass
-    #p.start()
-    #while not _ready_to_shut_down_controller():
-    #    pass
-
-    # stop the experiment
-    #stop_controller()
-
-    #p.join()
-
-    # upload result
     start_recording()
-    throughput=parse_result()
+    throughput = parse_result()
     LOG.info('Throughput = %.4f',throughput)
     write_knobs()
     vm_swapiness=parse_vm_swapiness()
-    LOG.info('vm.swapiness = %s',vm_swapiness)
-
-    knobs=Knobs(vmSwapiness=vm_swapiness)
-    metrics=Metrics(throughput=throughput)
-    test=post_results(knobs,metrics)
-    LOG.info('test = %s',test)
-    
-    #upload_result()
-
-    # get result
-    #get_result()
-
-    # change config
-    #change_conf()
-
+    knobs = Knobs(vmSwapiness=vm_swapiness)
+    metrics = Metrics(throughput=throughput)
+    recommendation = post_results(knobs,metrics)
+    knobs = Knobs(vmSwapiness=json.loads(recommendation)["vm.swapiness"])
+    apply_recommendation(knobs)
 
 @task
-def run_loops(max_iter=1):
+def run_loops(max_iter=100):
     for i in range(int(max_iter)):
         LOG.info('The %s-th Loop Starts / Total Loops %s', i + 1, max_iter)
+        first_recommendation=get_first_recommendation()
+        LOG.info(f'initial_recommendation = {first_recommendation}')
+        knobs = Knobs(vmSwapiness=json.loads(first_recommendation)["vm.swapiness"])
+        apply_recommendation(knobs)
         loop()
         LOG.info('The %s-th Loop Ends / Total Loops %s', i + 1, max_iter)

@@ -11,5 +11,6 @@
   "oltpbench_workload": "tpcc",
   "oltpbench_log" : "/home/azureuser/ostune/client/oltp.log",
   "save_path": "/home/azureuser/ostune/client/results",
-  "tuner_url" : "http://10.0.7.5:8000/api/v1/get_recommendation"
+  "tuner_url" : "http://10.0.7.5:8000/api/v1/get_recommendation",
+  "tuner_create" : "http://10.0.7.5:8000/api/v1/create_tuning_session"
 }

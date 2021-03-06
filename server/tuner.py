@@ -74,7 +74,7 @@ class Bayesian (threading.Thread):
 
    def get_metrics(self, vm_swapiness):
        temp = {}
-       temp[VM_SWAPINESS] = vm_swapiness
+       temp[VM_SWAPINESS] = int(vm_swapiness)
        tempJson = json.dumps(temp)
        store[tempJson] = 0
        while store[tempJson] == 0:

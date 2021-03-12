@@ -3,6 +3,5 @@ class Metrics:
         self.throughput = throughput
 
     def serialize(self):
-        return {
-            'throughput': self.throughput
-        }
+        serialized = self.serialize()
+        return serialized

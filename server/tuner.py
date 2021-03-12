@@ -30,10 +30,14 @@ def get_recommendation():
     request_data = request.get_json()
     metricsJson = json.loads(request_data[METRICS])
     knobsJson = json.loads(request_data[KNOBS])
-    knobs = Knobs(vmSwapiness=knobsJson[VM_SWAPINESS])
+    knobs = Knobs(vmSwapiness=knobsJson[VM_SWAPINESS], vmDirtyBackgroundRatio=knobsJson[VM_DIRTY_BACKGROUND_RATIO],
+                  vmDirtyRatio=knobsJson[VM_DIRTY_RATIO], vmOvercommitRatio=knobsJson[VM_OVERCOMMIT_RATIO])
     metrics = Metrics(throughput=metricsJson[THROUGHPUT])
     temp = {}
     temp[VM_SWAPINESS] = knobs.vmSwapiness
+    temp[VM_DIRTY_BACKGROUND_RATIO] = knobs.vmDirtyBackgroundRatio
+    temp[VM_DIRTY_RATIO] = knobs.vmDirtyRatio
+    temp[VM_OVERCOMMIT_RATIO] = knobs.vmOvercommitRatio
     tempJson = json.dumps(temp)
     store[tempJson] = metrics.throughput
     firstHash = int(hashlib.sha256(str(tempJson).encode('utf-8')).hexdigest(), 16) % 10 ** 8
@@ -63,7 +67,13 @@ class Bayesian (threading.Thread):
       self.name = sessionId
 
    def run(self):
-      space = hp.randint('vm_swapiness', 100)
+      space = {
+          VM_SWAPINESS: hp.randint(VM_SWAPINESS, 100),
+          VM_DIRTY_BACKGROUND_RATIO: hp.randint(VM_DIRTY_BACKGROUND_RATIO, 100),
+          VM_DIRTY_RATIO: hp.randint(VM_DIRTY_RATIO, 100),
+          VM_OVERCOMMIT_RATIO: hp.randint(VM_OVERCOMMIT_RATIO, 100)
+      }
+
       best = fmin(
           fn=self.get_metrics,
           space=space,
@@ -72,9 +82,12 @@ class Bayesian (threading.Thread):
       )
       LOG.info(f'best = {best}')
 
-   def get_metrics(self, vm_swapiness):
+   def get_metrics(self, parameters):
        temp = {}
-       temp[VM_SWAPINESS] = int(vm_swapiness)
+       temp[VM_SWAPINESS] = int(parameters[VM_SWAPINESS])
+       temp[VM_DIRTY_BACKGROUND_RATIO] = int(parameters[VM_DIRTY_BACKGROUND_RATIO])
+       temp[VM_DIRTY_RATIO] = int(parameters[VM_DIRTY_RATIO])
+       temp[VM_OVERCOMMIT_RATIO] = int(parameters[VM_OVERCOMMIT_RATIO])
        tempJson = json.dumps(temp)
        store[tempJson] = 0
        while store[tempJson] == 0:
@@ -84,6 +97,4 @@ class Bayesian (threading.Thread):
        return -1.0 * result
 
 app.run(debug=True, port=8000, host='0.0.0.0')
-
-
 

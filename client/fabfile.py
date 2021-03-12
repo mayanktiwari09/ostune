@@ -190,9 +190,26 @@ def parse_vm_swapiness():
     end=len(result_str)
     return int(result_str[start:end])
 
+def parse_vm_dirty_background_ratio():
+    result_str=open(CONF['vm_dirty_background_ratio']).read()
+    start=result_str.find(" = ") + 3
+    end=len(result_str)
+    return int(result_str[start:end])
+
+def parse_vm_dirty_ratio():
+    result_str=open(CONF['vm_dirty_ratio']).read()
+    start=result_str.find(" = ") + 3
+    end=len(result_str)
+    return int(result_str[start:end])
+
+def parse_vm_overcommit_ratio():
+    result_str=open(CONF['vm_overcommit_ratio']).read()
+    start=result_str.find(" = ") + 3
+    end=len(result_str)
+    return int(result_str[start:end])
+
 def post_results(knobs: Knobs, metrics: Metrics):
     dictToSend = { 'metrics':json.dumps(metrics.serialize()),'knobs':json.dumps(knobs.serialize())}
-    print(json.loads(json.dumps(dictToSend)))
     res = requests.post(CONF['tuner_url'], json=json.loads(json.dumps(dictToSend)))
     return res.json()
 
@@ -202,6 +219,12 @@ def get_first_recommendation():
 
 def apply_recommendation(knobs: Knobs):
     cmd = f'sudo sysctl -w vm.swappiness={knobs.vmSwapiness}'
+    os.system(cmd)
+    cmd = f'sudo sysctl -w vm.dirty_background_ratio={knobs.vmDirtyBackgroundRatio}'
+    os.system(cmd)
+    cmd = f'sudo sysctl -w vm.dirty_ratio={knobs.vmDirtyRatio}'
+    os.system(cmd)
+    cmd = f'sudo sysctl -w vm.overcommit_ratio={knobs.vmOvercommitRatio}'
     os.system(cmd)
     return 0
 
@@ -214,17 +237,20 @@ def loop():
     LOG.info('Throughput = %.4f',throughput)
     write_knobs()
     vm_swapiness=parse_vm_swapiness()
-    knobs = Knobs(vmSwapiness=vm_swapiness)
+    vm_dirty_background_ratio=parse_vm_dirty_background_ratio()
+    vm_dirty_ratio=parse_vm_dirty_ratio()
+    vm_overcommit_ratio=parse_vm_overcommit_ratio()
+    knobs = Knobs(vmSwapiness=vm_swapiness,vmDirtyBackgroundRatio=vm_dirty_background_ratio,vmDirtyRatio=vm_dirty_ratio,vmOvercommitRatio=vm_overcommit_ratio)
     metrics = Metrics(throughput=throughput)
     recommendation = post_results(knobs,metrics)
-    knobs = Knobs(vmSwapiness=json.loads(recommendation)["vm.swapiness"])
+    knobs = Knobs(vmSwapiness=json.loads(recommendation)["vm.swapiness"],vmDirtyBackgroundRatio=json.loads(recommendation)["vm.dirty_background_ratio"],vmDirtyRatio=json.loads(recommendation)["vm.dirty_ratio"],vmOvercommitRatio=json.loads(recommendation)["vm.overcommit_ratio"])
     apply_recommendation(knobs)
 
 @task
-def run_loops(max_iter=100):
+def run_loops(max_iter=1000):
     first_recommendation=get_first_recommendation()
     LOG.info(f'initial_recommendation = {first_recommendation}')
-    knobs = Knobs(vmSwapiness=json.loads(first_recommendation)["vm.swapiness"])
+    knobs = Knobs(vmSwapiness=json.loads(first_recommendation)["vm.swapiness"],vmDirtyBackgroundRatio=json.loads(first_recommendation)["vm.dirty_background_ratio"],vmDirtyRatio=json.loads(first_recommendation)["vm.dirty_ratio"],vmOvercommitRatio=json.loads(first_recommendation)["vm.overcommit_ratio"])
     apply_recommendation(knobs)
     for i in range(int(max_iter)):
         LOG.info('The %s-th Loop Starts / Total Loops %s', i + 1, max_iter)

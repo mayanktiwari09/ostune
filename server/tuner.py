@@ -78,7 +78,7 @@ class Bayesian (threading.Thread):
           fn=self.get_metrics,
           space=space,
           algo=tpe.suggest,
-          max_evals=100
+          max_evals=EVALS
       )
       LOG.info(f'best = {best}')
 

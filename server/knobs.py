@@ -1,3 +1,5 @@
+from constants import *
+
 class Knobs:
     def __init__(self, vmSwapiness, vmDirtyBackgroundRatio, vmDirtyRatio, vmOvercommitRatio):
         self.vmSwapiness = vmSwapiness
@@ -7,9 +9,9 @@ class Knobs:
 
     def serialize(self):
         serialized = {
-            'vm.swapiness' : self.vmSwapiness,
-            'vm.dirty_background_ratio' : self.vmDirtyBackgroundRatio,
-            'vm.dirty_ratio' : self.vmDirtyRatio,
-            'vm.overcommit_ratio' : self.vmOvercommitRatio
+            VM_SWAPINESS : self.vmSwapiness,
+            VM_DIRTY_BACKGROUND_RATIO : self.vmDirtyBackgroundRatio,
+            VM_DIRTY_RATIO : self.vmDirtyRatio,
+            VM_OVERCOMMIT_RATIO : self.vmOvercommitRatio
         }
         return serialized

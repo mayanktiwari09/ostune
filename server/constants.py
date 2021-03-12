@@ -13,3 +13,4 @@ THROUGHPUT = "throughput"
 SESSION_ID = "session_id"
 ITERATIONS = "iterations"
 SLEEP = 2
+EVALS = 100

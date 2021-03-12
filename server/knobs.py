@@ -6,5 +6,10 @@ class Knobs:
         self.vmOvercommitRatio = vmOvercommitRatio
 
     def serialize(self):
-        serialized = self.serialize()
+        serialized = {
+            'vm.swapiness' : self.vmSwapiness,
+            'vm.dirty_background_ratio' : self.vmDirtyBackgroundRatio,
+            'vm.dirty_ratio' : self.vmDirtyRatio,
+            'vm.overcommit_ratio' : self.vmOvercommitRatio
+        }
         return serialized
